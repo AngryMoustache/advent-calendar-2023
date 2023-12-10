@@ -48,4 +48,23 @@ class BaseMap
             $this->point($x, $y - 1),
         ])->filter();
     }
+
+    public function firstWhere(mixed $value): mixed
+    {
+        return $this->map(function (string $pipe, int $x, int $y) use ($value) {
+            return ($pipe === $value ? [$x, $y] : null);
+        })->flatten(1)->filter()->first();
+    }
+
+    public function render()
+    {
+        echo '<pre>';
+        $this->map->each(function (Collection $row) {
+            $row->each(function ($value) {
+                echo $value;
+            });
+
+            echo '<br>';
+        });
+    }
 }
