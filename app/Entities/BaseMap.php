@@ -66,5 +66,7 @@ class BaseMap
 
             echo '<br>';
         });
+
+        echo '</pre>';
     }
 }
