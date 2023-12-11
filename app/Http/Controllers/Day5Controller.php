@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Entities\SeedRange;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
@@ -14,28 +12,61 @@ class Day5Controller extends Controller
 
     public function one()
     {
-        return $this->data()
-            ->mapWithKeys(fn (int $seed) => [$seed => $this->calculate($seed)])
-            ->pluck(7)
-            ->sort()
-            ->first();
+        $seeds = $this->data()->map(fn (int $seed) => [$seed, $seed + 1]);
+
+        return $this->calculate($seeds);
     }
 
     public function two()
     {
-        // Nah I think I'll pass on that one m8
+        $seeds = $this->data()->chunk(2)->map(fn (Collection $range) => [
+            (int) $range->first(),
+            (int) $range->first() + $range->last(),
+        ]);
+
+        return $this->calculate($seeds);
     }
 
-    private function calculate(int $seed): Collection
+    private function calculate(Collection $seeds): int
     {
-        $list = [$seed];
+        $this->ranges->each(function (Collection $ranges) use (&$seeds) {
+            $new = collect();
 
-        $this->ranges->each(function (Collection $ranges) use (&$list) {
-            $seed = Arr::last($list);
-            array_push($list, $ranges->first->check($seed)?->value($seed) ?? $seed);
+            while ($seeds->isNotEmpty()) {
+                [$from, $to] = $seeds->pop();
+                $matches = false;
+
+                foreach ($ranges as $range) {
+                    $overlapFrom = max($from, $range[1]);
+                    $overlapTo = min($to, $range[1] + $range[2]);
+
+                    if ($overlapFrom < $overlapTo) {
+                        $matches = true;
+
+                        $new->push([
+                            $overlapFrom - $range[1] + $range[0],
+                            $overlapTo - $range[1] + $range[0]
+                        ]);
+
+                        if ($overlapFrom > $from) {
+                            $seeds->push([$from, $overlapFrom]);
+                        }
+
+                        if ($to < $overlapTo) {
+                            $seeds->push([$overlapTo, $to]);
+                        }
+                    }
+                }
+
+                if (! $matches) {
+                    $new->push([$from, $to]);
+                }
+            }
+
+            $seeds = $new;
         });
 
-        return collect($list);
+        return $seeds->flatten()->min();
     }
 
     private function data()
@@ -52,16 +83,9 @@ class Day5Controller extends Controller
                     return explode(' ', Str::after($line->first(), 'seeds: '));
                 }
 
-                $this->ranges[$this->ranges->count()] = collect();
-
-                $line->skip(1)->each(function ($range) {
-                    [$destination, $source, $range] = explode(' ', $range);
-
-                    $this->ranges[$this->ranges->count() - 1]->push(new SeedRange(
-                        [(int) $source, $source + $range - 1],
-                        [(int) $destination, $destination + $range - 1],
-                    ));
-                });
+                $this->ranges[$this->ranges->count()] = collect([
+                    ...$line->skip(1)->map(fn ($range) => collect([...explode(' ', $range)]))
+                ]);
 
                 return null;
             })
