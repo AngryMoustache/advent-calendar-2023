@@ -9,10 +9,10 @@ class MirrorValley extends BaseMap
     public int $middleRow;
     public int $middleColumn;
 
-    public function findReflections(bool $smudge = false): self
+    public function findReflections(int $smudges = 0): self
     {
-        $this->middleRow = $this->findReflection($this->map, $smudge);
-        $this->middleColumn = $this->findReflection($this->map->transpose(), $smudge);
+        $this->middleRow = $this->findReflection($this->map, $smudges);
+        $this->middleColumn = $this->findReflection($this->map->transpose(), $smudges);
 
         return $this;
     }
@@ -22,7 +22,7 @@ class MirrorValley extends BaseMap
         return ($this->middleRow * 100) + $this->middleColumn;
     }
 
-    private function findReflection(Collection $rows, bool $smudge): int
+    private function findReflection(Collection $rows, int $smudgesExpected = 0): int
     {
         $rows = $rows->map(fn (Collection $row) => $row->join(''));
 
@@ -33,7 +33,15 @@ class MirrorValley extends BaseMap
             $top = $top->take($bottom->count());
             $bottom = $bottom->take($top->count());
 
-            if ($top->toArray() === $bottom->toArray()) {
+            $smudges = 0;
+            for ($i = 0; $i < $top->count(); $i++) {
+                $smudges += count(array_diff_assoc(
+                    str_split($bottom[$i]),
+                    str_split($top[$i]))
+                );
+            }
+
+            if ($smudges === $smudgesExpected) {
                 return $y;
             }
         }

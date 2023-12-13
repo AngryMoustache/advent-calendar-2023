@@ -11,7 +11,7 @@ class Day13Controller extends Controller
     public function one()
     {
         return $this->data()
-            ->map->findReflections()
+            ->map->findReflections(smudges: 0)
             ->map->count()
             ->sum();
     }
@@ -19,7 +19,7 @@ class Day13Controller extends Controller
     public function two()
     {
         return $this->data()
-            ->map->findReflections()
+            ->map->findReflections(smudges: 1)
             ->map->count()
             ->sum();
     }
