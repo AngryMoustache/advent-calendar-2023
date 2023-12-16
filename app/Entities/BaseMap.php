@@ -56,6 +56,23 @@ class BaseMap
         })->flatten(1)->filter()->first();
     }
 
+    public function set(int $x, int $y, mixed $value): self
+    {
+        if (isset($this->map[$y][$x])) {
+            $this->map[$y][$x] = $value;
+        }
+
+        return $this;
+    }
+
+    public function count(mixed $value): int
+    {
+        return $this->map(fn (string $v) => $v === $value)
+            ->flatten()
+            ->filter()
+            ->count();
+    }
+
     public function render()
     {
         echo '<pre>';
